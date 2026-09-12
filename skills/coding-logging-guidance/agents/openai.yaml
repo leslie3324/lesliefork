@@ -1,0 +1,4 @@
+interface:
+  display_name: "日志代码编写指导"
+  short_description: "指导全面记录用户上下文并审查可检索的应用日志代码质量"
+  default_prompt: "使用 $coding-logging-guidance 指导这次日志代码的编写或审查。"

@@ -1,0 +1,6 @@
+interface:
+  display_name: "GitLab 冲突预检并提 MR"
+  short_description: "主动预检 GitLab 冲突，按需解决并创建可审核的最终 MR"
+  default_prompt: "使用 $gitlab-prepare-mr 将当前 feat 分支准备合并到 test；无冲突直接提 MR，有冲突才创建候选分支。"
+policy:
+  allow_implicit_invocation: false

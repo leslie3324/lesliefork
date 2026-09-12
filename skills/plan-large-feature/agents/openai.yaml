@@ -1,0 +1,4 @@
+interface:
+  display_name: "中大型功能规划"
+  short_description: "拆分模块、任务、优先级和依赖关系并输出可评审的中大型功能计划"
+  default_prompt: "使用 $plan-large-feature 在编写代码前拆解这个中大型功能。"

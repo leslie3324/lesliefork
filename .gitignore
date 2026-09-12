@@ -1,0 +1,9 @@
+.DS_Store
+.idea/
+.vscode/
+*.log
+evals/**/outputs/
+evals/**/runs/
+.env
+.env.*
+!.env.example
