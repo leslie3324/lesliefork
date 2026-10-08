@@ -1,0 +1,6 @@
+interface:
+  display_name: "发版纪要"
+  short_description: "按功能范围生成仅含上线操作与配置待办的生产发版纪要"
+  default_prompt: "使用 $release-checklist 为本次已测试完成的需求生成生产发版待办。"
+policy:
+  allow_implicit_invocation: false

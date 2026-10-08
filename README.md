@@ -14,6 +14,7 @@
 | `plan-large-feature` | 将中大型功能拆分为模块、优先级、任务、依赖和模块关系 |
 | `api-integration-docs` | 按一次需求范围，独立生成 YApi、Postman 或飞书接口联调产物 |
 | `gitlab-prepare-mr` | 主动预检 Git 冲突；无冲突直接提原 feat MR，有冲突才创建候选 MR |
+| `release-checklist` | 仅在主动调用时，按功能范围生成生产发版所需的操作与配置待办 |
 
 ## 校验
 
