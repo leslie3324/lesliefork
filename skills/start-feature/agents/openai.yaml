@@ -1,0 +1,6 @@
+interface:
+  display_name: "开始新需求"
+  short_description: "基于最新 origin/pro 创建 feat 分支和独立 worktree"
+  default_prompt: "使用 $start-feature 开始新需求，确认分支名和 worktree 路径后创建。"
+policy:
+  allow_implicit_invocation: false

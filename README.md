@@ -5,15 +5,17 @@
 
 只有 `skills/` 目录下的内容属于运行时 Skill。`notes/` 用来保存个人方案记录，不应安装为 Skill；`evals/` 用来保存测试问题和评估标准，辅助后续改进 Skill 行为。
 
+根目录的 `AGENTS.md` 是我的个人通用 coding-agent 指令，通过配置的软链接供各 Agent 加载，适用于不同项目；放在这里仅作为软链接目标，不是本仓库的项目规范，也不是运行时 Skill。
+
 ## 当前 Skill
 
 | Skill | 用途 |
 |---|---|
-| `feature-delivery-workflow` | 按需编排功能规划、编码、日志、接口文档和 GitLab MR 阶段 |
+| `feature-delivery-workflow` | 按需编排功能规划、编码、日志、接口文档、提交前验证和 GitLab MR 阶段 |
 | `coding-logging-guidance` | 指导全面、有效、可检索的应用日志代码编写 |
 | `plan-large-feature` | 将中大型功能拆分为模块、优先级、任务、依赖和模块关系 |
 | `api-integration-docs` | 按一次需求范围，独立生成 YApi、Postman 或飞书接口联调产物 |
-| `gitlab-prepare-mr` | 主动预检 Git 冲突；无冲突直接提原 feat MR，有冲突才创建候选 MR |
+| `git-workflow` | 分析基线更新与分支冲突；确认后同步基线或准备、创建 GitLab MR |
 | `release-checklist` | 仅在主动调用时，按功能范围生成生产发版所需的操作与配置待办 |
 
 ## 校验
@@ -31,7 +33,7 @@ python3 /Users/leslie/.codex/skills/.system/skill-creator/scripts/quick_validate
   skills/api-integration-docs
 
 python3 /Users/leslie/.codex/skills/.system/skill-creator/scripts/quick_validate.py \
-  skills/gitlab-prepare-mr
+  skills/git-workflow
 ```
 
 ## `api-integration-docs` 的调用边界
