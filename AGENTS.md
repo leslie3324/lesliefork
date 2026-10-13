@@ -18,5 +18,6 @@
 - 先识别目标工作区所属项目及仓库根目录。
 - 如果目标位于 `~/Code/comein/` 下，必须先读取 `~/Code/comein/AGENTS.md`，并以它作为 Comein 项目的最高优先级规则；发生冲突时，以 Comein 根规则为准。
 - 对于 `~/Code/comein/` 以外的项目，读取目标仓库及当前路径层级内适用的 `AGENTS.md` 或 `AGENTS.override.md`，按目标项目规则处理，不把其他项目的路径或流程假设带过来。
+- 创建或维护需求文档前，读取 `/Users/leslie/Code/me/lesliefork/governance/docs/docs-governance.md`；文档结构以该目录的模板为准，不另维护副本。
 - 涉及提交、推送、删除、重置、覆盖配置或其他可能丢失工作的操作时，遵循用户明确确认和目标仓库规则。
 - 任何情况绝对禁止将 test 回灌 feat，即使用户确认也不执行；不得通过其他 Git 操作、历史 SHA、改名或中转分支绕过。所有 MR 检查原 feat 的回灌历史，已污染或来源不明停止发布；从 test 建的冲突候选只能提到原 test，不能回 feat 或发布到 pro。

@@ -1,11 +1,13 @@
 """Local Git integration tests; no network or business repository writes."""
 
 import importlib.util
+from datetime import date
 from pathlib import Path
 import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / "skills/start-feature/scripts/start_feature.py"
@@ -131,6 +133,11 @@ class StartFeatureTests(unittest.TestCase):
         self.assertEqual({p.name for p in docs.iterdir()}, {
             "index.md", "overview.md", "design.md", "decisions.md", "_scratch",
         })
+        for template in START_FEATURE.TEMPLATES.rglob("*"):
+            if template.is_file() and template.name != ".gitkeep":
+                expected = template.read_text().replace("{{date}}", date.today().isoformat())
+                self.assertEqual((docs / template.relative_to(START_FEATURE.TEMPLATES)).read_text(), expected)
+        self.assertEqual(list((docs / "_scratch").iterdir()), [])
         for name in ("index.md", "overview.md", "design.md", "decisions.md"):
             self.assertIn("状态: 草稿", (docs / name).read_text())
             self.assertIn("职责：", (docs / name).read_text())
@@ -156,6 +163,20 @@ class StartFeatureTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             START_FEATURE.init_docs(self.repo, "feat/example")
         self.assertEqual(list(outside.iterdir()), [])
+
+    def test_added_template_is_copied_without_script_changes(self):
+        templates = self.root / "templates"
+        (templates / "extra").mkdir(parents=True)
+        (templates / "extra/new.md").write_text("New template {{date}}\n")
+        with patch.object(START_FEATURE, "TEMPLATES", templates):
+            docs = START_FEATURE.init_docs(self.repo, "feat/example")
+        self.assertEqual((docs / "extra/new.md").read_text(), f"New template {date.today().isoformat()}\n")
+
+    def test_missing_templates_stop_before_creation(self):
+        argv = [str(SCRIPT), str(self.repo), "feat/example", str(self.worktree), "--docs"]
+        with patch.object(START_FEATURE, "TEMPLATES", self.root / "missing"), patch.object(sys, "argv", argv):
+            self.assertEqual(START_FEATURE.main(), 1)
+        self.assert_not_created()
 
 
 if __name__ == "__main__":

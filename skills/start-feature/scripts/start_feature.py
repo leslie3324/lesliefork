@@ -8,6 +8,9 @@ import subprocess
 import sys
 
 
+TEMPLATES = Path(__file__).resolve().parents[3] / "governance/docs/templates"
+
+
 def git(repo, *args):
     return subprocess.run(
         ["git", "-C", str(repo), *args],
@@ -16,34 +19,25 @@ def git(repo, *args):
 
 
 def init_docs(worktree, branch):
+    if not TEMPLATES.is_dir():
+        raise ValueError("Documentation templates are missing from the skill repository.")
     worktree = worktree.resolve()
     docs = worktree / "docs" / branch
     if any(path.is_symlink() for path in (docs, *docs.parents)):
         raise ValueError("Documentation path must not use symlinks.")
     docs.mkdir(parents=True, exist_ok=True)
-    header = f"状态: 草稿    最后更新: {date.today().isoformat()}\n\n"
-    documents = {
-        "index.md": "# 需求文档入口\n\n职责：阅读顺序、文档职责和当前阶段。\n\n"
-        "当前阶段：需求对齐。\n\n| 文档 | 职责 | 状态 |\n|---|---|---|\n"
-        "| overview.md | 需求总览与待确认问题 | 已建 |\n"
-        "| design.md | 设计与实现口径 | 已建 |\n"
-        "| decisions.md | 决策与问题流水 | 已建 |\n"
-        "| _scratch/ | 未定稿草稿 | 已建 |\n",
-        "overview.md": "# 需求总览\n\n职责：记录已确认需求、范围和阶段边界。\n\n"
-        "## 已确认结论\n\n## 待确认问题\n",
-        "design.md": "# 设计\n\n职责：维护接口、数据和业务链路的权威设计。\n\n"
-        "## 接口\n\n## 数据\n\n## 业务链路与实现\n",
-        "decisions.md": "# 决策与问题\n\n职责：按背景、决定、理由记录决策。\n\n"
-        "## 待处理\n\n## 已确认\n",
-    }
-    if any((docs / name).is_symlink() for name in (*documents, "_scratch")):
-        raise ValueError("Documentation entries must not be symlinks.")
-    for name, body in documents.items():
-        path = docs / name
-        if not path.exists():
+    for template in sorted(TEMPLATES.rglob("*")):
+        if template.is_symlink():
+            raise ValueError("Documentation templates must not be symlinks.")
+        path = docs / template.relative_to(TEMPLATES)
+        if any(parent.is_symlink() for parent in (path, *path.parents)):
+            raise ValueError("Documentation entries must not be symlinks.")
+        if template.is_dir():
+            path.mkdir(exist_ok=True)
+        elif template.name != ".gitkeep" and not path.exists():
+            body = template.read_text(encoding="utf-8").replace("{{date}}", date.today().isoformat())
             with path.open("x", encoding="utf-8") as output:
-                output.write(header + body)
-    (docs / "_scratch").mkdir(exist_ok=True)
+                output.write(body)
     return docs
 
 
@@ -66,6 +60,8 @@ def main():
         if args.worktree.exists() or args.worktree.is_symlink():
             raise ValueError("Worktree path already exists; choose a new path.")
         worktree = args.worktree.resolve()
+        if args.docs and not TEMPLATES.is_dir():
+            raise ValueError("Documentation templates are missing from the skill repository.")
         if worktree.is_relative_to(root) and subprocess.run(
             ["git", "-C", str(root), "check-ignore", "-q", str(worktree)],
         ).returncode != 0:
