@@ -1,5 +1,6 @@
 """Local Git integration tests; no network or business repository writes."""
 
+import importlib.util
 from pathlib import Path
 import subprocess
 import sys
@@ -8,6 +9,10 @@ import unittest
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / "skills/start-feature/scripts/start_feature.py"
+sys.dont_write_bytecode = True
+SPEC = importlib.util.spec_from_file_location("start_feature", SCRIPT)
+START_FEATURE = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(START_FEATURE)
 
 
 def git(repo, *args):
@@ -74,6 +79,7 @@ class StartFeatureTests(unittest.TestCase):
         self.assertEqual(git(self.worktree, "branch", "--show-current"), "feat/example")
         self.assertEqual((self.worktree / "code.txt").read_text(), "updated pro\n")
         self.assertEqual(git(self.worktree, "status", "--porcelain"), "")
+        self.assertFalse((self.worktree / "docs" / "feat/example").exists())
         after = [git(self.repo, *args) for args in (
             ("status", "--porcelain"), ("diff", "--cached"), ("diff",),
             ("rev-parse", "HEAD"), ("branch", "--show-current"),
@@ -117,6 +123,39 @@ class StartFeatureTests(unittest.TestCase):
         self.worktree = self.repo / ".worktrees" / "example"
         self.assertNotEqual(self.run_script().returncode, 0)
         self.assert_not_created()
+
+    def test_docs_created_only_in_new_worktree(self):
+        result = self.run_script("feat/example", "--docs")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        docs = self.worktree / "docs/feat/example"
+        self.assertEqual({p.name for p in docs.iterdir()}, {
+            "index.md", "overview.md", "design.md", "decisions.md", "_scratch",
+        })
+        for name in ("index.md", "overview.md", "design.md", "decisions.md"):
+            self.assertIn("状态: 草稿", (docs / name).read_text())
+            self.assertIn("职责：", (docs / name).read_text())
+        self.assertIn("## 待确认问题", (docs / "overview.md").read_text())
+        self.assertIn("## 已确认", (docs / "decisions.md").read_text())
+        self.assertFalse((self.repo / "docs/feat/example").exists())
+        self.assertEqual(git(self.repo, "status", "--porcelain"), "")
+        self.assertEqual(git(self.worktree, "diff", "--cached"), "")
+
+    def test_existing_docs_not_overwritten(self):
+        docs = self.repo / "docs/feat/example"
+        docs.mkdir(parents=True)
+        (docs / "overview.md").write_text("confirmed content\n")
+        START_FEATURE.init_docs(self.repo, "feat/example")
+        START_FEATURE.init_docs(self.repo, "feat/example")
+        self.assertEqual((docs / "overview.md").read_text(), "confirmed content\n")
+        self.assertTrue((docs / "design.md").exists())
+
+    def test_doc_symlink_cannot_write_outside_worktree(self):
+        outside = self.root / "outside"
+        outside.mkdir()
+        (self.repo / "docs").symlink_to(outside, target_is_directory=True)
+        with self.assertRaises(ValueError):
+            START_FEATURE.init_docs(self.repo, "feat/example")
+        self.assertEqual(list(outside.iterdir()), [])
 
 
 if __name__ == "__main__":

@@ -1,6 +1,0 @@
-interface:
-  display_name: "Git 开发与交付"
-  short_description: "分析基线更新与分支冲突，确认后同步基线或准备 GitLab MR"
-  default_prompt: "使用 $git-workflow 分析最新 pro 对当前 feat 的影响，推荐处理方式，先不要修改分支。"
-policy:
-  allow_implicit_invocation: false

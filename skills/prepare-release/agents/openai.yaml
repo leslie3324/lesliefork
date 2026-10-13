@@ -1,0 +1,6 @@
+interface:
+  display_name: "准备发版"
+  short_description: "复用提交前检查，准备测试或生产 MR、部署步骤和发版纪要"
+  default_prompt: "使用 $prepare-release 准备本次测试发版，给出 MR、部署步骤和发版纪要。"
+policy:
+  allow_implicit_invocation: false

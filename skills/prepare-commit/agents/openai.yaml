@@ -1,0 +1,6 @@
+interface:
+  display_name: "准备提交"
+  short_description: "检查改动与 pro 基线，执行必要编译和相关测试后给出提交结论"
+  default_prompt: "使用 $prepare-commit 检查本次改动和基线，完成提交前验证。"
+policy:
+  allow_implicit_invocation: false

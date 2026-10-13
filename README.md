@@ -11,12 +11,14 @@
 
 | Skill | 用途 |
 |---|---|
-| `feature-delivery-workflow` | 按需编排功能规划、编码、日志、接口文档、提交前验证和 GitLab MR 阶段 |
+| `start-feature` | 从最新 pro 创建 feat、worktree，中大型需求初始化文档骨架 |
+| `prepare-commit` | 检查改动与基线，完成必要编译和相关测试，提供可复用验证证据 |
+| `prepare-release` | 复用提交前检查，准备测试/生产 MR、部署步骤和发版纪要 |
 | `coding-logging-guidance` | 指导全面、有效、可检索的应用日志代码编写 |
 | `plan-large-feature` | 将中大型功能拆分为模块、优先级、任务、依赖和模块关系 |
 | `api-integration-docs` | 按一次需求范围，独立生成 YApi、Postman 或飞书接口联调产物 |
-| `git-workflow` | 分析基线更新与分支冲突；确认后同步基线或准备、创建 GitLab MR |
-| `release-checklist` | 仅在主动调用时，按功能范围生成生产发版所需的操作与配置待办 |
+| `release-checklist` | 独立维护或由 prepare-release 复用测试/生产发版材料 |
+| `handoff` | 将当前对话整理为下一会话可接续的交接文档 |
 
 ## 校验
 
@@ -33,8 +35,18 @@ python3 /Users/leslie/.codex/skills/.system/skill-creator/scripts/quick_validate
   skills/api-integration-docs
 
 python3 /Users/leslie/.codex/skills/.system/skill-creator/scripts/quick_validate.py \
-  skills/git-workflow
+  skills/start-feature
+
+python3 /Users/leslie/.codex/skills/.system/skill-creator/scripts/quick_validate.py \
+  skills/prepare-commit
+
+python3 /Users/leslie/.codex/skills/.system/skill-creator/scripts/quick_validate.py \
+  skills/prepare-release
+
+python3 evals/test_start_feature.py -v
 ```
+
+`prepare-release` 复用 `prepare-commit` 的成功验证证据；内容、基线、范围或运行条件变化后只补受影响验证，不重复跑未失效的编译和测试。
 
 ## `api-integration-docs` 的调用边界
 
