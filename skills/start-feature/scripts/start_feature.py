@@ -18,7 +18,7 @@ def git(repo, *args):
     ).stdout.strip()
 
 
-def init_docs(worktree, branch):
+def init_docs(worktree, branch, include_parallel_plan=False):
     if not TEMPLATES.is_dir():
         raise ValueError("Documentation templates are missing from the skill repository.")
     worktree = worktree.resolve()
@@ -29,6 +29,8 @@ def init_docs(worktree, branch):
     for template in sorted(TEMPLATES.rglob("*")):
         if template.is_symlink():
             raise ValueError("Documentation templates must not be symlinks.")
+        if template.name == "module-breakdown.md" and not include_parallel_plan:
+            continue
         path = docs / template.relative_to(TEMPLATES)
         if any(parent.is_symlink() for parent in (path, *path.parents)):
             raise ValueError("Documentation entries must not be symlinks.")
@@ -41,19 +43,68 @@ def init_docs(worktree, branch):
     return docs
 
 
+def is_registered_worktree(root, worktree, branch):
+    """Require the target to be this repository's checked-out feature branch."""
+    if worktree.is_symlink() or not worktree.is_dir():
+        return False
+    try:
+        top = Path(git(worktree, "rev-parse", "--show-toplevel")).resolve()
+        current_branch = git(worktree, "branch", "--show-current")
+    except (OSError, subprocess.CalledProcessError):
+        return False
+    if top != worktree.resolve() or current_branch != branch:
+        return False
+
+    records = []
+    current = None
+    for line in git(root, "worktree", "list", "--porcelain").splitlines():
+        if line.startswith("worktree "):
+            if current:
+                records.append(current)
+            current = {"path": str(Path(line.removeprefix("worktree ")).resolve())}
+        elif line.startswith("branch ") and current is not None:
+            current["branch"] = line.removeprefix("branch ")
+    if current:
+        records.append(current)
+    return any(
+        record.get("path") == str(worktree.resolve())
+        and record.get("branch") == f"refs/heads/{branch}"
+        for record in records
+    )
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("repo", type=Path)
     parser.add_argument("branch", help="New feat/... branch")
     parser.add_argument("worktree", type=Path, help="New worktree directory")
-    parser.add_argument("--docs", action="store_true", help="Initialize requirement documents")
+    parser.add_argument("--docs", action="store_true", help="Initialize docs while creating the worktree")
+    parser.add_argument("--init-docs", action="store_true", help="Initialize docs in an existing feature worktree")
+    parser.add_argument("--parallel", action="store_true", help="Include the optional parallel task template")
     args = parser.parse_args()
 
     try:
+        if args.docs and args.init_docs:
+            raise ValueError("Use either --docs or --init-docs, not both.")
+        if args.parallel and not (args.docs or args.init_docs):
+            raise ValueError("Use --parallel only with --docs or --init-docs.")
         root = Path(git(args.repo, "rev-parse", "--show-toplevel"))
         if not args.branch.startswith("feat/"):
             raise ValueError("Branch must start with feat/.")
         git(root, "check-ref-format", "--branch", args.branch)
+
+        if args.init_docs:
+            branches = git(root, "for-each-ref", "--format=%(refname)", "refs/heads")
+            if f"refs/heads/{args.branch}" not in branches.splitlines():
+                raise ValueError("Feature branch does not exist in this repository.")
+            worktree = args.worktree
+            if not is_registered_worktree(root, worktree, args.branch):
+                raise ValueError("The path must be this repository's worktree on the requested feature branch.")
+            if not TEMPLATES.is_dir():
+                raise ValueError("Documentation templates are missing from the skill repository.")
+            print(f"docs: {init_docs(worktree, args.branch, args.parallel)}")
+            return 0
+
         branches = git(root, "for-each-ref", "--format=%(refname)", "refs/heads")
         if f"refs/heads/{args.branch}" in branches.splitlines():
             raise ValueError("Branch already exists; nothing will be overwritten.")
@@ -75,7 +126,7 @@ def main():
             "--no-track", "-b", args.branch, str(worktree), base)
         print(f"branch: {args.branch}\nbase: origin/pro {base}\nworktree: {worktree}")
         if args.docs:
-            print(f"docs: {init_docs(worktree, args.branch)}")
+            print(f"docs: {init_docs(worktree, args.branch, args.parallel)}")
     except (OSError, ValueError, subprocess.CalledProcessError) as error:
         message = error.stderr.strip() if isinstance(error, subprocess.CalledProcessError) else str(error)
         print(f"Error: {message}", file=sys.stderr)

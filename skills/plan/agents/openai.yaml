@@ -1,0 +1,4 @@
+interface:
+  display_name: "实现规划"
+  short_description: "确认实现方案、验收标准、E2E路径和可并行任务"
+  default_prompt: "使用 $plan 基于已确认需求制定实现计划；先明确验收和E2E，不要开始编码。"

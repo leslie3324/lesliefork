@@ -11,4 +11,5 @@
 | overview.md | 需求总览与待确认问题 | 已建 |
 | design.md | 设计与实现口径 | 已建 |
 | decisions.md | 决策与问题流水 | 已建 |
+| module-breakdown.md | 并行任务、依赖和验收地图 | 按需 |
 | _scratch/ | 未定稿草稿 | 已建 |

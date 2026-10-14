@@ -11,11 +11,12 @@
 
 | Skill | 用途 |
 |---|---|
-| `start-feature` | 从最新 pro 创建 feat、worktree，中大型需求初始化文档骨架 |
+| `start-feature` | 先从最新 pro 创建主 feat worktree，需求澄清后按确认初始化文档 |
+| `grill` | 澄清目标、范围、业务规则和可验收结果；由用户选择规模、文档和并行方式 |
+| `plan` | 基于已确认需求规划实现方案、验收/E2E和最大可行并行拆分 |
 | `prepare-commit` | 检查改动与基线，完成必要编译和相关测试，提供可复用验证证据 |
 | `prepare-release` | 复用提交前检查，准备测试/生产 MR、部署步骤和发版纪要 |
 | `coding-logging-guidance` | 指导全面、有效、可检索的应用日志代码编写 |
-| `plan-large-feature` | 将中大型功能拆分为模块、优先级、任务、依赖和模块关系 |
 | `api-integration-docs` | 按一次需求范围，独立生成 YApi、Postman 或飞书接口联调产物 |
 | `release-checklist` | 独立维护或由 prepare-release 复用测试/生产发版材料 |
 | `handoff` | 将当前对话整理为下一会话可接续的交接文档 |
@@ -29,13 +30,16 @@ python3 /Users/leslie/.codex/skills/.system/skill-creator/scripts/quick_validate
   skills/coding-logging-guidance
 
 python3 /Users/leslie/.codex/skills/.system/skill-creator/scripts/quick_validate.py \
-  skills/plan-large-feature
-
-python3 /Users/leslie/.codex/skills/.system/skill-creator/scripts/quick_validate.py \
   skills/api-integration-docs
 
 python3 /Users/leslie/.codex/skills/.system/skill-creator/scripts/quick_validate.py \
   skills/start-feature
+
+python3 /Users/leslie/.codex/skills/.system/skill-creator/scripts/quick_validate.py \
+  skills/grill
+
+python3 /Users/leslie/.codex/skills/.system/skill-creator/scripts/quick_validate.py \
+  skills/plan
 
 python3 /Users/leslie/.codex/skills/.system/skill-creator/scripts/quick_validate.py \
   skills/prepare-commit
@@ -47,6 +51,8 @@ python3 evals/test_start_feature.py -v
 ```
 
 `prepare-release` 复用 `prepare-commit` 的成功验证证据；内容、基线、范围或运行条件变化后只补受影响验证，不重复跑未失效的编译和测试。
+
+需求工作流先创建主 feat worktree，再运行 `grill` 对齐需求；用户确认推进模式后，由 `plan` 规划实现、验收标准、E2E 和并行任务。并行开发时使用 `module-breakdown.md` 模板；完整文档按需初始化，不为所有任务默认铺设。
 
 ## `api-integration-docs` 的调用边界
 

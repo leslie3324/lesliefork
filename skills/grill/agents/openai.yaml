@@ -1,0 +1,4 @@
+interface:
+  display_name: "需求澄清"
+  short_description: "澄清目标、范围和可验收结果，再建议文档与并行方式"
+  default_prompt: "使用 $grill 澄清这项需求，先不要设计或修改实现。"

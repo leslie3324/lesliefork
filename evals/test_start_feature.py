@@ -134,7 +134,7 @@ class StartFeatureTests(unittest.TestCase):
             "index.md", "overview.md", "design.md", "decisions.md", "_scratch",
         })
         for template in START_FEATURE.TEMPLATES.rglob("*"):
-            if template.is_file() and template.name != ".gitkeep":
+            if template.is_file() and template.name not in {".gitkeep", "module-breakdown.md"}:
                 expected = template.read_text().replace("{{date}}", date.today().isoformat())
                 self.assertEqual((docs / template.relative_to(START_FEATURE.TEMPLATES)).read_text(), expected)
         self.assertEqual(list((docs / "_scratch").iterdir()), [])
@@ -142,10 +142,47 @@ class StartFeatureTests(unittest.TestCase):
             self.assertIn("状态: 草稿", (docs / name).read_text())
             self.assertIn("职责：", (docs / name).read_text())
         self.assertIn("## 待确认问题", (docs / "overview.md").read_text())
+        self.assertIn("## 验收标准", (docs / "overview.md").read_text())
         self.assertIn("## 已确认", (docs / "decisions.md").read_text())
         self.assertFalse((self.repo / "docs/feat/example").exists())
         self.assertEqual(git(self.repo, "status", "--porcelain"), "")
         self.assertEqual(git(self.worktree, "diff", "--cached"), "")
+
+    def test_docs_can_be_initialized_after_worktree_creation(self):
+        result = self.run_script()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        docs = self.worktree / "docs/feat/example"
+        self.assertFalse(docs.exists())
+
+        result = self.run_script("feat/example", "--init-docs")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue((docs / "overview.md").exists())
+        self.assertFalse((docs / "module-breakdown.md").exists())
+        self.assertIn(str(docs), result.stdout)
+
+    def test_parallel_template_is_opt_in_when_initializing_docs_later(self):
+        result = self.run_script()
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+        result = self.run_script("feat/example", "--init-docs", "--parallel")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue((self.worktree / "docs/feat/example/module-breakdown.md").exists())
+
+    def test_delayed_docs_refuse_wrong_branch_or_unregistered_path(self):
+        result = self.run_script()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        git(self.repo, "branch", "feat/other")
+
+        result = self.run_script("feat/other", "--init-docs")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertFalse((self.worktree / "docs").exists())
+
+        unregistered = self.root / "unregistered"
+        unregistered.mkdir()
+        self.worktree = unregistered
+        result = self.run_script("feat/example", "--init-docs")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(list(unregistered.iterdir()), [])
 
     def test_existing_docs_not_overwritten(self):
         docs = self.repo / "docs/feat/example"
