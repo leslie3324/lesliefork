@@ -1,0 +1,6 @@
+interface:
+  display_name: "Apollo 配置"
+  short_description: "用 computer use 查看配置，确认后修改和发布测试配置并回读验证"
+  default_prompt: "使用 $apollo-config 通过 computer use 检查本次 Apollo 配置差异，修改和发布分别等我确认，并验证结果。"
+policy:
+  allow_implicit_invocation: false

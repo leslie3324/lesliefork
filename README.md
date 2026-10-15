@@ -16,6 +16,7 @@
 | `plan` | 基于已确认需求规划实现方案、验收/E2E和最大可行并行拆分 |
 | `prepare-commit` | 检查改动与基线，完成必要编译和相关测试，提供可复用验证证据 |
 | `prepare-release` | 复用提交前检查，准备测试/生产 MR、部署步骤和发版纪要 |
+| `apollo-config` | 用 computer use 检查配置差异，分别确认测试环境修改和发布并回读验证 |
 | `coding-logging-guidance` | 指导全面、有效、可检索的应用日志代码编写 |
 | `api-integration-docs` | 按一次需求范围，独立生成 YApi、Postman 或飞书接口联调产物 |
 | `release-checklist` | 独立维护或由 prepare-release 复用测试/生产发版材料 |
@@ -47,12 +48,17 @@ python3 /Users/leslie/.codex/skills/.system/skill-creator/scripts/quick_validate
 python3 /Users/leslie/.codex/skills/.system/skill-creator/scripts/quick_validate.py \
   skills/prepare-release
 
+python3 /Users/leslie/.codex/skills/.system/skill-creator/scripts/quick_validate.py \
+  skills/apollo-config
+
 python3 evals/test_start_feature.py -v
 ```
 
 `prepare-release` 复用 `prepare-commit` 的成功验证证据；内容、基线、范围或运行条件变化后只补受影响验证，不重复跑未失效的编译和测试。
 
 需求工作流先创建主 feat worktree，再运行 `grill` 对齐需求；用户确认推进模式后，由 `plan` 规划实现、验收标准、E2E 和并行任务。并行开发时使用 `module-breakdown.md` 模板；完整文档按需初始化，不为所有任务默认铺设。
+
+`apollo-config` 通过 computer use 操作已授权 Portal 会话，不要求 Open API Token，不新建 CLI/MCP。修改、发布分别确认，只执行测试写入；保存、发布与服务生效分开验证。需要登录由用户手动完成，实际页面操作权限仍须核对。
 
 ## `api-integration-docs` 的调用边界
 
