@@ -1,0 +1,6 @@
+interface:
+  display_name: "Maven 制品发布"
+  short_description: "检查本次模块、版本和目标仓库，确认后发布并独立验证依赖拉取"
+  default_prompt: "使用 $maven-publish 检查本次 Maven 制品，先确认发布范围和命令，发布后验证制品和调用方依赖。"
+policy:
+  allow_implicit_invocation: false

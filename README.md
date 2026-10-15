@@ -16,7 +16,10 @@
 | `plan` | 基于已确认需求规划实现方案、验收/E2E和最大可行并行拆分 |
 | `prepare-commit` | 检查改动与基线，完成必要编译和相关测试，提供可复用验证证据 |
 | `prepare-release` | 复用提交前检查，准备测试/生产 MR、部署步骤和发版纪要 |
+| `troubleshoot` | 按问题选择已授权日志源，通过浏览器只读查询并给出证据与判断 |
+| `mysql-change` | 检查本次 SQL，确认后执行测试数据库变更并查询验证结果 |
 | `apollo-config` | 用 computer use 检查配置差异，分别确认测试环境修改和发布并回读验证 |
+| `maven-publish` | 核对本次模块、版本和仓库，确认后发布并独立验证远程拉取及调用方依赖 |
 | `coding-logging-guidance` | 指导全面、有效、可检索的应用日志代码编写 |
 | `api-integration-docs` | 按一次需求范围，独立生成 YApi、Postman 或飞书接口联调产物 |
 | `release-checklist` | 独立维护或由 prepare-release 复用测试/生产发版材料 |
@@ -49,7 +52,16 @@ python3 /Users/leslie/.codex/skills/.system/skill-creator/scripts/quick_validate
   skills/prepare-release
 
 python3 /Users/leslie/.codex/skills/.system/skill-creator/scripts/quick_validate.py \
+  skills/troubleshoot
+
+python3 /Users/leslie/.codex/skills/.system/skill-creator/scripts/quick_validate.py \
+  skills/mysql-change
+
+python3 /Users/leslie/.codex/skills/.system/skill-creator/scripts/quick_validate.py \
   skills/apollo-config
+
+python3 /Users/leslie/.codex/skills/.system/skill-creator/scripts/quick_validate.py \
+  skills/maven-publish
 
 python3 evals/test_start_feature.py -v
 ```
@@ -58,7 +70,13 @@ python3 evals/test_start_feature.py -v
 
 需求工作流先创建主 feat worktree，再运行 `grill` 对齐需求；用户确认推进模式后，由 `plan` 规划实现、验收标准、E2E 和并行任务。并行开发时使用 `module-breakdown.md` 模板；完整文档按需初始化，不为所有任务默认铺设。
 
+Comein 日志来源统一维护在 `governance/comein/log-sources.md`，由 Comein `AGENTS.md` 引用；`troubleshoot` 不硬编码业务平台。需要运行环境提供 computer use 和已授权浏览器会话，Skill 本身不提供浏览器工具或访问权限。
+
+Comein 数据库接入统一维护在 `governance/comein/database-access.md`，由 Comein `AGENTS.md` 引用；`mysql-change` 沿用已有 DBeaver 测试连接，需要 computer use 桌面能力。正式环境本版只提供方案，Skill 本身不提供工具或数据库权限。
+
 `apollo-config` 通过 computer use 操作已授权 Portal 会话，不要求 Open API Token，不新建 CLI/MCP。修改、发布分别确认，只执行测试写入；保存、发布与服务生效分开验证。需要登录由用户手动完成，实际页面操作权限仍须核对。
+
+`maven-publish` 沿用项目 Maven 和已有 settings，不新建 Nexus 客户端；同版本重发需明确确认，不强制改版本或调整仓库策略。发布后用独立缓存核对远程包的实际内容，再检查调用方是否使用了新包及相关编译、测试；相关远程依赖同版本内容变化后，旧验证不能直接复用。
 
 ## `api-integration-docs` 的调用边界
 
