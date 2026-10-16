@@ -22,7 +22,7 @@
 | `maven-publish` | 核对本次模块、版本和仓库，确认后发布并独立验证远程拉取及调用方依赖 |
 | `coding-logging-guidance` | 指导全面、有效、可检索的应用日志代码编写 |
 | `api-integration-docs` | 按一次需求范围，独立生成 YApi、Postman 或飞书接口联调产物 |
-| `release-checklist` | 独立维护或由 prepare-release 复用测试/生产发版材料 |
+| `release-checklist` | 本地维护测试/生产发版材料，审核后按授权只同步 ywy 飞书条目 |
 | `handoff` | 将当前对话整理为下一会话可接续的交接文档 |
 
 ## 校验
@@ -68,11 +68,13 @@ python3 evals/test_start_feature.py -v
 
 `prepare-release` 复用 `prepare-commit` 的成功验证证据；内容、基线、范围或运行条件变化后只补受影响验证，不重复跑未失效的编译和测试。
 
+两个发版 Skill 分工：`prepare-release` 负责验证与 MR 准备，`release-checklist` 负责本地材料、多轮审核及明确授权后的飞书同步。Comein 格式只维护在 `governance/comein/templates/release-checklist.md`，同步边界见 `governance/comein/release-minutes.md`；仅增改本需求 ywy 条目，不覆盖共享表或他人内容。独立测试文档已验证局部写入、插行、重复核对及非目标内容保护；多人共编无并发锁，同步需确认目标区域无人编辑。本周参考文档不修改。
+
 需求工作流先创建主 feat worktree，再运行 `grill` 对齐需求；用户确认推进模式后，由 `plan` 规划实现、验收标准、E2E 和并行任务。并行开发时使用 `module-breakdown.md` 模板；完整文档按需初始化，不为所有任务默认铺设。
 
 Comein 日志来源统一维护在 `governance/comein/log-sources.md`，由 Comein `AGENTS.md` 引用；`troubleshoot` 不硬编码业务平台。需要运行环境提供 computer use 和已授权浏览器会话，Skill 本身不提供浏览器工具或访问权限。
 
-Comein 数据库接入统一维护在 `governance/comein/database-access.md`，由 Comein `AGENTS.md` 引用；`mysql-change` 沿用已有 DBeaver 测试连接，需要 computer use 桌面能力。正式环境本版只提供方案，Skill 本身不提供工具或数据库权限。
+Comein 数据库接入统一维护在 `governance/comein/database-access.md`，由 Comein `AGENTS.md` 引用；`mysql-change` 使用已配置的原生 MySQL 客户端和独立连接，不用桌面自动执行 SQL。凭据留在本机，连接专用配置不影响其他连接；正式环境本版只提供方案，Skill 本身不提供工具或数据库权限。
 
 `apollo-config` 通过 computer use 操作已授权 Portal 会话，不要求 Open API Token，不新建 CLI/MCP。修改、发布分别确认，只执行测试写入；保存、发布与服务生效分开验证。需要登录由用户手动完成，实际页面操作权限仍须核对。
 
