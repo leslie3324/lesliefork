@@ -1,0 +1,6 @@
+interface:
+  display_name: "端到端验收"
+  short_description: "按已确认标准验收本次真实业务链路，核对最终结果并保留证据"
+  default_prompt: "使用 $e2e-verify 按之前已确认的验收标准完成本次需求的端到端验收，给出逐项结果、证据和未完成项。"
+policy:
+  allow_implicit_invocation: false
