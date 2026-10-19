@@ -1,0 +1,2 @@
+# Keep the vendored upstream Skill byte-for-byte identical.
+skills/agent-reach/** whitespace=-trailing-space

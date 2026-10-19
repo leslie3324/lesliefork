@@ -25,6 +25,24 @@
 | `api-integration-docs` | 按一次需求范围，独立生成 YApi、Postman 或飞书接口联调产物 |
 | `release-checklist` | 本地维护测试/生产发版材料，审核后按授权只同步 ywy 飞书条目 |
 | `handoff` | 将当前对话整理为下一会话可接续的交接文档 |
+| `agent-reach` | 第三方互联网访问能力路由；通过同步脚本维护到各 Agent 的统一软链接 |
+
+## `agent-reach` 同步
+
+`skills/agent-reach` 是 Agent Reach 上游 Skill 的版本化镜像，由以下脚本从 pipx 安装目录同步 `SKILL.md` 和 `references/`，并恢复各 Agent 的软链接：
+
+```bash
+./scripts/sync-agent-reach-skill.sh
+```
+
+脚本当前维护：
+
+- `~/.agents/skills/agent-reach`：Codex 和通用 Agent Skill 目录
+- `~/.claude/skills/agent-reach`：Claude Code
+- `~/.config/opencode/skills/agent-reach`：OpenCode
+- `~/.openclaw/skills/agent-reach`：仅在 OpenClaw Skill 目录已存在时维护
+
+`agent-reach install` 更新包时会把软链接替换为真实目录，因此每次更新 Agent Reach 后都要重新运行同步脚本。
 
 ## 校验
 
