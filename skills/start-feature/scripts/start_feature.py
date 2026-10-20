@@ -76,7 +76,7 @@ def is_registered_worktree(root, worktree, branch):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("repo", type=Path)
-    parser.add_argument("branch", help="New feat/... branch")
+    parser.add_argument("branch", help="New feature branch name")
     parser.add_argument("worktree", type=Path, help="New worktree directory")
     parser.add_argument("--docs", action="store_true", help="Initialize docs while creating the worktree")
     parser.add_argument("--init-docs", action="store_true", help="Initialize docs in an existing feature worktree")
@@ -89,8 +89,6 @@ def main():
         if args.parallel and not (args.docs or args.init_docs):
             raise ValueError("Use --parallel only with --docs or --init-docs.")
         root = Path(git(args.repo, "rev-parse", "--show-toplevel"))
-        if not args.branch.startswith("feat/"):
-            raise ValueError("Branch must start with feat/.")
         git(root, "check-ref-format", "--branch", args.branch)
 
         if args.init_docs:

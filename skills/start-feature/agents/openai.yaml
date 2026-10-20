@@ -1,6 +1,6 @@
 interface:
   display_name: "开始新需求"
-  short_description: "先创建主 feat worktree，需求澄清后再按确认初始化文档"
-  default_prompt: "使用 $start-feature 创建主 feat worktree；先不生成文档。"
+  short_description: "确认完整分支名后创建主功能分支 worktree，需求澄清后再按确认初始化文档"
+  default_prompt: "使用 $start-feature：先取得完整分支名并交用户确认，确认后从最新 origin/pro 创建主功能分支 worktree；先不生成文档。"
 policy:
   allow_implicit_invocation: false

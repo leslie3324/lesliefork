@@ -51,9 +51,9 @@ class StartFeatureTests(unittest.TestCase):
             capture_output=True, text=True,
         )
 
-    def assert_not_created(self):
+    def assert_not_created(self, branch="feat/example"):
         self.assertFalse(self.worktree.exists())
-        self.assertNotIn("refs/heads/feat/example", git(
+        self.assertNotIn(f"refs/heads/{branch}", git(
             self.repo, "for-each-ref", "--format=%(refname)", "refs/heads",
         ).splitlines())
 
@@ -90,15 +90,22 @@ class StartFeatureTests(unittest.TestCase):
         self.assertIn(str(self.worktree), result.stdout)
 
     def test_invalid_or_existing_branch_refused(self):
-        for branch in ("test", "feat/bad..name"):
+        for branch in ("feat/bad..name", "feature/bad..name"):
             with self.subTest(branch=branch):
                 self.assertNotEqual(self.run_script(branch).returncode, 0)
-                self.assert_not_created()
+                self.assert_not_created(branch)
         git(self.repo, "branch", "feat/example")
         original = git(self.repo, "rev-parse", "feat/example")
         self.assertNotEqual(self.run_script().returncode, 0)
         self.assertFalse(self.worktree.exists())
         self.assertEqual(git(self.repo, "rev-parse", "feat/example"), original)
+
+    def test_feature_branch_with_story_id_is_accepted(self):
+        branch = "feature/7137837370/mcp-support-grouping-and-search"
+        result = self.run_script(branch)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(git(self.worktree, "branch", "--show-current"), branch)
+        self.assertEqual(git(self.worktree, "rev-parse", "HEAD"), git(self.source, "rev-parse", "HEAD"))
 
     def test_existing_path_refused(self):
         self.worktree.mkdir()
