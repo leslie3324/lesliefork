@@ -26,6 +26,7 @@
 | `release-checklist` | 本地维护测试/生产发版材料，审核后按授权只同步 ywy 飞书条目 |
 | `handoff` | 将当前对话整理为下一会话可接续的交接文档 |
 | `agent-reach` | 第三方互联网访问能力路由；通过同步脚本维护到各 Agent 的统一软链接 |
+| `archify` | 第三方架构、流程、时序、数据流、ERD、时间线、瀑布图和单页解释页；按官方 stable 包版本化维护 |
 
 ## `agent-reach` 同步
 
@@ -43,6 +44,10 @@
 - `~/.openclaw/skills/agent-reach`：仅在 OpenClaw Skill 目录已存在时维护
 
 `agent-reach install` 更新包时会把软链接替换为真实目录，因此每次更新 Agent Reach 后都要重新运行同步脚本。
+
+## `archify` 来源与维护
+
+`skills/archify` 是 `tt-a1i/archify` 官方 stable release `v3.2.0` 的版本化副本，使用官方更新清单和 ZIP SHA-256 校验后导入。上游来源、发布 tree SHA、artifact hash 和导入快照见 `skills/archify/UPSTREAM.md`。该 Skill 由本仓库维护，需要升级时从官方 stable release 重新同步并审查差异，不使用 `npx skills update`。
 
 ## 校验
 

@@ -1,2 +1,3 @@
-# Keep the vendored upstream Skill byte-for-byte identical.
+# Keep vendored upstream Skills byte-for-byte identical.
 skills/agent-reach/** whitespace=-trailing-space
+skills/archify/** whitespace=-trailing-space
