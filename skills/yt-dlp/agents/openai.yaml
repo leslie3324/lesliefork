@@ -1,0 +1,4 @@
+interface:
+  display_name: "yt-dlp 视频下载"
+  short_description: "下载视频、音频和字幕，并查询视频可用格式与画质"
+  default_prompt: "使用 $yt-dlp 下载这个视频，并告诉我文件保存位置和实际格式。"

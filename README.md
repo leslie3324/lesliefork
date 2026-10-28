@@ -29,6 +29,7 @@
 | `handoff` | 将当前对话整理为下一会话可接续的交接文档 |
 | `agent-reach` | 第三方互联网访问能力路由；通过同步脚本维护到各 Agent 的统一软链接 |
 | `archify` | 第三方架构、流程、时序、数据流、ERD、时间线、瀑布图和单页解释页；按官方 stable 包版本化维护 |
+| `yt-dlp` | 下载视频、播放列表、音频和字幕，并查询可用格式；基于上游 Skill 适配维护 |
 
 ## `agent-reach` 同步
 
@@ -50,6 +51,10 @@
 ## `archify` 来源与维护
 
 `skills/archify` 是 `tt-a1i/archify` 官方 stable release `v3.2.0` 的版本化副本，使用官方更新清单和 ZIP SHA-256 校验后导入。上游来源、发布 tree SHA、artifact hash 和导入快照见 `skills/archify/UPSTREAM.md`。该 Skill 由本仓库维护，需要升级时从官方 stable release 重新同步并审查差异，不使用 `npx skills update`。
+
+## `yt-dlp` 来源与维护
+
+`skills/yt-dlp` 参考 `feiskyer/video-skills` 的 `download-video` Skill，并针对本仓库调整为中文入口、默认单视频、显式 Cookie 授权、可配置输出和离线可检查的下载脚本。上游 commit、MIT License 与本地改动见 `skills/yt-dlp/UPSTREAM.md`。该 Skill 由本仓库维护，不通过 `npx skills update` 自动覆盖。
 
 ## 校验
 
@@ -97,6 +102,9 @@ python3 /Users/leslie/.codex/skills/.system/skill-creator/scripts/quick_validate
 
 python3 /Users/leslie/.codex/skills/.system/skill-creator/scripts/quick_validate.py \
   skills/maven-publish
+
+python3 /Users/leslie/.codex/skills/.system/skill-creator/scripts/quick_validate.py \
+  skills/yt-dlp
 
 python3 evals/test_start_feature.py -v
 ```
