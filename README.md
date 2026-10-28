@@ -32,7 +32,7 @@
 
 ## `agent-reach` 同步
 
-`skills/agent-reach` 是 Agent Reach 上游 Skill 的版本化镜像，由以下脚本从 pipx 安装目录同步 `SKILL.md` 和 `references/`，并恢复各 Agent 的软链接：
+`skills/agent-reach` 是 Agent Reach 上游 Skill 的版本化镜像，由以下脚本从 uv tool 或 pipx 安装目录同步 `SKILL.md`、`SKILL_en.md` 和 `references/`，并恢复各 Agent 的软链接：
 
 ```bash
 ./scripts/sync-agent-reach-skill.sh

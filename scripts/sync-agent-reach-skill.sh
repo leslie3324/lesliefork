@@ -6,15 +6,23 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 SOURCE_DIR="$REPO_ROOT/skills/agent-reach"
 VALIDATOR="${CODEX_HOME:-$HOME/.codex}/skills/.system/skill-creator/scripts/quick_validate.py"
 
-if ! command -v pipx >/dev/null 2>&1; then
-  echo "pipx is required to locate the installed agent-reach package" >&2
-  exit 1
+PYTHON=""
+if command -v uv >/dev/null 2>&1; then
+  VENV_ROOT="$(uv tool dir)"
+  if [[ -x "$VENV_ROOT/agent-reach/bin/python" ]]; then
+    PYTHON="$VENV_ROOT/agent-reach/bin/python"
+  fi
 fi
 
-VENV_ROOT="$(pipx environment --value PIPX_LOCAL_VENVS)"
-PYTHON="$VENV_ROOT/agent-reach/bin/python"
-if [[ ! -x "$PYTHON" ]]; then
-  echo "agent-reach is not installed in the pipx venv: $VENV_ROOT/agent-reach" >&2
+if [[ -z "$PYTHON" ]] && command -v pipx >/dev/null 2>&1; then
+  VENV_ROOT="$(pipx environment --value PIPX_LOCAL_VENVS)"
+  if [[ -x "$VENV_ROOT/agent-reach/bin/python" ]]; then
+    PYTHON="$VENV_ROOT/agent-reach/bin/python"
+  fi
+fi
+
+if [[ -z "$PYTHON" ]]; then
+  echo "agent-reach is not installed in a uv or pipx tool environment" >&2
   exit 1
 fi
 
@@ -34,6 +42,19 @@ fi
 
 mkdir -p "$SOURCE_DIR"
 rsync -a --delete "$UPSTREAM_SKILL/" "$SOURCE_DIR/"
+
+# Agent Reach 1.6 ships templates; render both languages for the installed version and channels.
+if [[ -f "$UPSTREAM_SKILL/../runtime/manage.py" ]]; then
+  "$PYTHON" - "$SOURCE_DIR/SKILL.md" "$SOURCE_DIR/SKILL_en.md" <<'PY'
+import sys
+from pathlib import Path
+
+from agent_reach.runtime.manage import render_skill
+
+Path(sys.argv[1]).write_text(render_skill(lang="zh"), encoding="utf-8")
+Path(sys.argv[2]).write_text(render_skill(lang="en"), encoding="utf-8")
+PY
+fi
 
 link_skill() {
   local link_path="$1"
