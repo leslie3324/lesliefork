@@ -13,6 +13,7 @@
 |---|---|
 | `start-feature` | 先从最新 pro 创建主 feat worktree，需求澄清后按确认初始化文档 |
 | `grill` | 澄清目标、范围、业务规则和可验收结果；由用户选择规模、文档和并行方式 |
+| `search-first` | 实现前寻找可复用方案，核验适配与风险，建议采用、PoC 或自研；没有合格方案就明确说没有 |
 | `plan` | 基于已确认需求规划实现方案、验收/E2E和最大可行并行拆分 |
 | `review-diff` | 需求集成后独立审完整差异与相关上下文，区分本次/存量问题，保留闭环及有限复审证据 |
 | `e2e-verify` | 按之前已确认标准验收本次真实业务链路，核对最终结果并保留证据 |
@@ -68,6 +69,9 @@ python3 /Users/leslie/.codex/skills/.system/skill-creator/scripts/quick_validate
   skills/grill
 
 python3 /Users/leslie/.codex/skills/.system/skill-creator/scripts/quick_validate.py \
+  skills/search-first
+
+python3 /Users/leslie/.codex/skills/.system/skill-creator/scripts/quick_validate.py \
   skills/plan
 
 python3 /Users/leslie/.codex/skills/.system/skill-creator/scripts/quick_validate.py \
@@ -101,9 +105,11 @@ python3 evals/test_start_feature.py -v
 
 两个发版 Skill 分工：`prepare-release` 负责验证与 MR 准备，`release-checklist` 负责本地材料、多轮审核及明确授权后的飞书同步。Comein 格式只维护在 `governance/comein/templates/release-checklist.md`，同步边界见 `governance/comein/release-minutes.md`；仅增改本需求 ywy 条目，不覆盖共享表或他人内容。独立测试文档已验证局部写入、插行、重复核对及非目标内容保护；多人共编无并发锁，同步需确认目标区域无人编辑。本周参考文档不修改。
 
-需求工作流先创建主 feat worktree，再运行 `grill` 对齐需求；用户确认推进模式后，由 `plan` 规划实现、验收标准、E2E 和并行任务。并行开发时使用 `module-breakdown.md` 模板；完整文档按需初始化，不为所有任务默认铺设。
+需求工作流先创建主 feat worktree，再运行 `grill` 对齐需求；存在需选型的可复用能力缺口时走 `grill → search-first → plan`，没有则直接交给 `plan`。用户确认推进模式后，由 `plan` 规划实现、验收标准、E2E 和并行任务。并行开发时使用 `module-breakdown.md` 模板；完整文档按需初始化，不为所有任务默认铺设。
 
 开发与集成完成后，按需求维度走 `review-diff → 修复/有限复审 → prepare-commit → 提交 → prepare-release`，不逐任务 Review、不做风险分级。`review-diff` 用独立上下文和已授权独立 worktree，以完整需求 diff 为入口追相关实现、调用方和契约，区分本次引入/激活与 `Pre-existing`，过滤纯 style/lint 和重复 findings；来源判定、闭环、最多三轮及内容绑定只维护在该 Skill，行为用例见 [evals/review-diff.md](evals/review-diff.md)。编译/测试仍在提交前做最小有效验证，E2E 在计划约定环境执行：本地可验收时交付前，依赖真实部署时部署后。代码审查、编译测试和业务验收各自留结论，不互相代替。
+
+`search-first` 可独立调用：它负责核验与采用决策，`agent-reach` 负责互联网获取，`find-skills` 可作为 Skill 发现入口，三者不互相替代。`grill`/`plan` 只引用调研结果；检索与资格规则只维护在 `search-first`。初版为指令型 Skill，不含安装/扫描脚本，不自动执行候选或 PoC。行为用例与效果评估方案见 [evals/search-first.md](evals/search-first.md)，结构校验不等于效果验证。
 
 `e2e-verify` 只执行此前已确认的本次需求验收，不重新制定或降低标准，不强制维护长期回归测试。复用现有 API、项目测试、MySQL 和已授权浏览器能力，不依赖 tester-army/e2e；Skill 本身不提供工具或权限。真实部署未就绪就报告待验收/阻塞，发布流程引用当前部署对应的证据，不自动修复或部署。
 

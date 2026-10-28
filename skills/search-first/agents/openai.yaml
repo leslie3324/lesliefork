@@ -1,0 +1,4 @@
+interface:
+  display_name: "先搜后做"
+  short_description: "实现前寻找可复用方案，核验适配与风险，决定采用、验证或自研"
+  default_prompt: "使用 $search-first 为这项需求寻找可复用方案；不合适就明确说没有，先不要安装或实现。"
