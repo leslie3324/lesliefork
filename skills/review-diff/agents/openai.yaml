@@ -1,0 +1,4 @@
+interface:
+  display_name: "需求差异审查"
+  short_description: "独立审完整需求差异，区分本次与存量问题并保留有限复审证据"
+  default_prompt: "使用 $review-diff 在独立 worktree 中审查本次需求的完整差异与相关上下文，区分本次问题和 Pre-existing，给出证据及未决项，不修改业务代码。"
