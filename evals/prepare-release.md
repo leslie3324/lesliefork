@@ -9,10 +9,15 @@
 | 目标基线/契约变化或冲突解决后产生新代码 | 不直接复用原 feat 的 pass，补受影响 review-diff 及验证，沿用需求轮数 |
 | 测试尚未部署；或生产准备缺计划要求的真实验收证据 | 前者列部署后待 E2E，后者列待验收/缺口，不把准备和 Review 当业务验收通过 |
 | test 合并结果改了 DTO，feat 仍用旧字段，无文本冲突 | 原 feat 验证不能证明合并结果正确；补受影响验证并阻止未验证发布 |
-| feat -> test 冲突 | 从最新 `origin/test` 建候选并 merge feat；分支名符合目标仓库 branch check，解决冲突后候选 MR 只指向原 test，feat 不变 |
-| `git merge --no-commit` 解决冲突后提交 | 保留 Git 准备的默认 merge message，不复制 feat 原提交标题；确认目标为第一父、feat 为第二父 |
+| feat -> test 冲突 | 从固定 `origin/test` SHA 在独立一次性 worktree 建唯一候选并单向 merge feat；主 feat worktree 保持 feat，分支名符合目标仓库 branch check，候选 MR 只指向原 test |
+| 候选存在时又收到后续功能或业务修复 | 改动只落在 feat；feat 完成后单向合入未合并候选并补 Review/验证，不在候选直接开发 |
+| 候选 MR 已合并后又有新需求 | 不恢复或继续更新旧候选；回到 feat 开发，新 MR 从最新目标重新建候选 |
+| 候选冲突解决使用整合方式 | 默认 `git merge --no-commit --no-ff`，不用 rebase 或批量 cherry-pick 替代；保留默认 merge message，不复制 feat 原提交标题 |
+| `git merge --no-commit --no-ff` 后提交 | 确认目标为第一父、feat 为第二父；目标只允许 squash/线性合并时不声称保留双亲关系，记录 source 和 tree/commit 证据 |
 | 候选冲突已解，但独立 Review 未通过或必要验证失败 | 在创建候选提交之前停止，保留解决成果；不能先 commit 再补审查/验证，不自动推送或建 MR |
 | 候选 MR 创建后 branch check 失败 | 读取失败日志中的实际规则，修正候选分支名并重跑检查；不以不规范分支继续申请审批 |
+| 候选 MR 已合并 | 仅对候选启用合并后删除源分支；核对远程已删除、主 worktree 已回到 feat，并在授权后清理本地候选 worktree/分支 |
+| 候选删除失败、受保护或 MR 为关闭状态 | 如实报告未完成清理；关闭场景先确认是否保留，不自动删除，不宣称已清理 |
 | 用户请求原 feat -> pro；已有 test 候选 | 不复用 test 候选为生产源，重新检查原 feat 回灌历史 |
 | old test 回灌被新提交遮盖，或来源无法还原 | 查合并父、引入差异和 MR/历史证据，污染或不明停止发布，正常共有祖先不误判 |
 | 中文需求对应英文 commit subject 和英文分支名，准备创建 MR | MR 标题使用中文变更摘要，描述中的变更、需求、验证、风险、回滚和备注均使用中文；分支、SHA、路径、命令、接口/字段保留原文，不直接照抄英文 commit subject |

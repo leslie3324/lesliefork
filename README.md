@@ -109,7 +109,7 @@ python3 /Users/leslie/.codex/skills/.system/skill-creator/scripts/quick_validate
 python3 evals/test_start_feature.py -v
 ```
 
-`prepare-release` 复用 `prepare-commit` 的成功验证证据；内容、基线、范围或运行条件变化后只补受影响验证，不重复跑未失效的编译和测试。
+`prepare-release` 复用 `prepare-commit` 的成功验证证据；内容、基线、范围或运行条件变化后只补受影响验证，不重复跑未失效的编译和测试。冲突候选使用独立的一次性 worktree，feat 始终是业务改动主线；feat 以 `merge --no-ff` 单向合入候选，合并后删除候选并回到 feat。
 
 两个发版 Skill 分工：`prepare-release` 负责验证与 MR 准备，`release-checklist` 负责本地材料、多轮审核及明确授权后的飞书同步。Comein 格式只维护在 `governance/comein/templates/release-checklist.md`，同步边界见 `governance/comein/release-minutes.md`；仅增改本需求 ywy 条目，不覆盖共享表或他人内容。独立测试文档已验证局部写入、插行、重复核对及非目标内容保护；多人共编无并发锁，同步需确认目标区域无人编辑。本周参考文档不修改。
 
