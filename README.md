@@ -28,6 +28,7 @@
 | `release-checklist` | 本地维护测试/生产发版材料，审核后按授权只同步 ywy 飞书条目 |
 | `handoff` | 将当前对话整理为下一会话可接续的交接文档 |
 | `agent-reach` | 第三方互联网访问能力路由；通过同步脚本维护到各 Agent 的统一软链接 |
+| `agent-desktop` | 通过系统无障碍树给 Agent 提供桌面应用观察与操作能力，用于本地客户端 E2E |
 | `archify` | 第三方架构、流程、时序、数据流、ERD、时间线、瀑布图和单页解释页；按官方 stable 包版本化维护 |
 | `yt-dlp` | 下载视频、播放列表、音频和字幕，并查询可用格式；基于上游 Skill 适配维护 |
 
@@ -47,6 +48,12 @@
 - `~/.openclaw/skills/agent-reach`：仅在 OpenClaw Skill 目录已存在时维护
 
 `agent-reach install` 更新包时会把软链接替换为真实目录，因此每次更新 Agent Reach 后都要重新运行同步脚本。
+
+## `agent-desktop` 维护
+
+`skills/agent-desktop` 是本地薄封装，只维护入口、权限边界、macOS 兼容问题和桌面 E2E 流程。命令细则通过 `agent-desktop skills get ...` 从已安装二进制按版本读取，不在仓库复制上游文档。
+
+当前安装版本的 macOS `list-apps` 存在上游缺陷；Skill 默认绕过该命令，使用 `open -a` 加 `snapshot --app`。升级 CLI 后先验证修复，再决定是否放宽这条约束。
 
 ## `archify` 来源与维护
 
@@ -105,6 +112,9 @@ python3 /Users/leslie/.codex/skills/.system/skill-creator/scripts/quick_validate
 
 python3 /Users/leslie/.codex/skills/.system/skill-creator/scripts/quick_validate.py \
   skills/yt-dlp
+
+python3 /Users/leslie/.codex/skills/.system/skill-creator/scripts/quick_validate.py \
+  skills/agent-desktop
 
 python3 evals/test_start_feature.py -v
 ```
