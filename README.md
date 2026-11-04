@@ -32,6 +32,8 @@
 | `archify` | 第三方架构、流程、时序、数据流、ERD、时间线、瀑布图和单页解释页；按官方 stable 包版本化维护 |
 | `yt-dlp` | 下载视频、播放列表、音频和字幕，并查询可用格式；基于上游 Skill 适配维护 |
 
+部分阶段 Skill 在 `agents/openai.yaml` 中设置了 `policy.allow_implicit_invocation: false`，因此不会出现在模型可见的自动发现清单；这是显式调用边界，不是目录扫描失败。此类 Skill 仍可通过 `$skill-name` 或明确的 `SKILL.md` 路径加载。
+
 ## `agent-reach` 同步
 
 `skills/agent-reach` 是 Agent Reach 上游 Skill 的版本化镜像，由以下脚本从 uv tool 或 pipx 安装目录同步 `SKILL.md`、`SKILL_en.md` 和 `references/`，并恢复各 Agent 的软链接：
@@ -117,6 +119,9 @@ python3 /Users/leslie/.codex/skills/.system/skill-creator/scripts/quick_validate
   skills/agent-desktop
 
 python3 evals/test_start_feature.py -v
+
+python3 evals/run_evals.py --dry-run
+python3 evals/run_evals.py --repeat 1
 ```
 
 `prepare-release` 复用 `prepare-commit` 的成功验证证据；内容、基线、范围或运行条件变化后只补受影响验证，不重复跑未失效的编译和测试。冲突候选使用独立的一次性 worktree，feat 始终是业务改动主线；feat 以 `merge --no-ff` 单向合入候选，合并后删除候选并回到 feat。
@@ -125,7 +130,7 @@ python3 evals/test_start_feature.py -v
 
 需求工作流先创建主 feat worktree，再运行 `grill` 对齐需求；存在需选型的可复用能力缺口时走 `grill → search-first → plan`，没有则直接交给 `plan`。用户确认推进模式后，由 `plan` 规划实现、验收标准、E2E 和并行任务。并行开发时使用 `module-breakdown.md` 模板；完整文档按需初始化，不为所有任务默认铺设。
 
-开发与集成完成后，按需求维度走 `review-diff → 修复/有限复审 → prepare-commit → 提交 → prepare-release`，不逐任务 Review、不做风险分级。`review-diff` 用独立上下文和已授权独立 worktree，以完整需求 diff 为入口追相关实现、调用方和契约，区分本次引入/激活与 `Pre-existing`，过滤纯 style/lint 和重复 findings；来源判定、闭环、最多三轮及内容绑定只维护在该 Skill，行为用例见 [evals/review-diff.md](evals/review-diff.md)。编译/测试仍在提交前做最小有效验证，E2E 在计划约定环境执行：本地可验收时交付前，依赖真实部署时部署后。代码审查、编译测试和业务验收各自留结论，不互相代替。
+开发与集成完成后，按需求维度走 `review-diff → 修复/有限复审 → prepare-commit → 提交 → prepare-release`，不逐任务 Review、不做风险分级。`review-diff` 用独立上下文和已授权独立 worktree，以完整需求 diff 为入口追相关实现、调用方和契约，区分本次引入/激活与 `Pre-existing`，过滤纯 style/lint 和重复 findings；来源判定、闭环、最多三轮及内容绑定只维护在该 Skill，行为用例见 [evals/review-diff.md](evals/review-diff.md)。编译/测试仍在提交前做最小有效验证；本地能启动、连接或 mock 本次涉及的真实依赖时，完整 E2E 必须在提交前执行，部署后的环境特定 E2E 是追加门禁。代码审查、编译测试和业务验收各自留结论，不互相代替。
 
 `search-first` 可独立调用：它负责核验与采用决策，`agent-reach` 负责互联网获取，`find-skills` 可作为 Skill 发现入口，三者不互相替代。`grill`/`plan` 只引用调研结果；检索与资格规则只维护在 `search-first`。初版为指令型 Skill，不含安装/扫描脚本，不自动执行候选或 PoC。行为用例与效果评估方案见 [evals/search-first.md](evals/search-first.md)，结构校验不等于效果验证。
 
