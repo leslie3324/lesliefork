@@ -11,6 +11,7 @@
 
 | Skill | 用途 |
 |---|---|
+| `dev-router` | 显式调用时识别中大型需求的当前阶段、下一步和门禁，只加载当前阶段；默认只建议不自动执行 |
 | `start-feature` | 先从最新 pro 创建主 feat worktree，需求澄清后按确认初始化文档 |
 | `grill` | 澄清目标、范围、业务规则和可验收结果；由用户选择规模、文档和并行方式 |
 | `search-first` | 实现前寻找可复用方案，核验适配与风险，建议采用、PoC 或自研；没有合格方案就明确说没有 |
@@ -33,6 +34,10 @@
 | `yt-dlp` | 下载视频、播放列表、音频和字幕，并查询可用格式；基于上游 Skill 适配维护 |
 
 部分阶段 Skill 在 `agents/openai.yaml` 中设置了 `policy.allow_implicit_invocation: false`，因此不会出现在模型可见的自动发现清单；这是显式调用边界，不是目录扫描失败。此类 Skill 仍可通过 `$skill-name` 或明确的 `SKILL.md` 路径加载。
+
+`dev-router` 默认不启用，也不自动串联流程。它是外层阶段路由，不是 Agent 主循环；主循环仍由 Agent 自身的计划、工具调用和结果反馈完成。`auto` 只建议当前阶段和下一步，不加载阶段 Skill；`stage:<阶段>` 只加载并执行用户指定的一个阶段；`end-to-end` 仅在用户明确要求完整流程时使用，只按需加载当前阶段，并在每个确认门禁停止。
+
+路由行为、懒加载检查和 A/B 结果见 [evals/dev-router.md](evals/dev-router.md)。
 
 ## `agent-reach` 同步
 
@@ -70,6 +75,9 @@
 为每个 Skill 运行 Skill Creator 校验脚本：
 
 ```bash
+python3 /Users/leslie/.codex/skills/.system/skill-creator/scripts/quick_validate.py \
+  skills/dev-router
+
 python3 /Users/leslie/.codex/skills/.system/skill-creator/scripts/quick_validate.py \
   skills/coding-logging-guidance
 
@@ -122,6 +130,8 @@ python3 evals/test_start_feature.py -v
 
 python3 evals/run_evals.py --dry-run
 python3 evals/run_evals.py --repeat 1
+python3 evals/run_evals.py --cases evals/cases-router.jsonl --repeat 3
+python3 evals/run_evals.py --cases evals/cases-router.jsonl --repeat 3 --unassisted
 ```
 
 `prepare-release` 复用 `prepare-commit` 的成功验证证据；内容、基线、范围或运行条件变化后只补受影响验证，不重复跑未失效的编译和测试。冲突候选使用独立的一次性 worktree，feat 始终是业务改动主线；feat 以 `merge --no-ff` 单向合入候选，合并后删除候选并回到 feat。

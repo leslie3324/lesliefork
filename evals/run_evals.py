@@ -28,7 +28,10 @@ class Case:
     skill: str
     prompt: str
     expect: tuple[tuple[str, ...], ...]
+    behavior_expect: tuple[tuple[str, ...], ...]
     reject: tuple[str, ...]
+    read: tuple[str, ...]
+    avoid_read: tuple[str, ...]
 
 
 def load_cases(path: Path) -> list[Case]:
@@ -46,7 +49,10 @@ def load_cases(path: Path) -> list[Case]:
         skill = item.get("skill")
         prompt = item.get("prompt")
         expect = item.get("expect")
+        behavior_expect = item.get("behavior_expect", expect)
         reject = item.get("reject", [])
+        read = item.get("read", [])
+        avoid_read = item.get("avoid_read", [])
         if not isinstance(case_id, str) or not case_id:
             raise ValueError(f"{path}:{line_no}: id must be a non-empty string")
         if case_id in seen:
@@ -61,9 +67,27 @@ def load_cases(path: Path) -> list[Case]:
             raise ValueError(f"{path}:{line_no}: every expect group must be a non-empty list")
         if not all(isinstance(pattern, str) and pattern for group in expect for pattern in group):
             raise ValueError(f"{path}:{line_no}: expect patterns must be non-empty strings")
+        if not isinstance(behavior_expect, list) or not behavior_expect:
+            raise ValueError(f"{path}:{line_no}: behavior_expect must be a non-empty list")
+        if not all(isinstance(group, list) and group for group in behavior_expect):
+            raise ValueError(f"{path}:{line_no}: every behavior_expect group must be a non-empty list")
+        if not all(isinstance(pattern, str) and pattern for group in behavior_expect for pattern in group):
+            raise ValueError(f"{path}:{line_no}: behavior_expect patterns must be non-empty strings")
         if not isinstance(reject, list) or not all(isinstance(pattern, str) and pattern for pattern in reject):
             raise ValueError(f"{path}:{line_no}: reject must be a list of non-empty strings")
-        for pattern in [p for group in expect for p in group] + reject:
+        if not isinstance(read, list) or not all(
+            isinstance(skill_name, str) and (REPO_ROOT / "skills" / skill_name / "SKILL.md").is_file()
+            for skill_name in read
+        ):
+            raise ValueError(f"{path}:{line_no}: read must be a list of known skill names")
+        if not isinstance(avoid_read, list) or not all(
+            isinstance(skill_name, str) and (REPO_ROOT / "skills" / skill_name / "SKILL.md").is_file()
+            for skill_name in avoid_read
+        ):
+            raise ValueError(f"{path}:{line_no}: avoid_read must be a list of known skill names")
+        for pattern in [p for group in expect for p in group] + [
+            p for group in behavior_expect for p in group
+        ] + reject:
             try:
                 re.compile(pattern, re.IGNORECASE | re.MULTILINE)
             except re.error as exc:
@@ -76,7 +100,10 @@ def load_cases(path: Path) -> list[Case]:
                 skill=skill,
                 prompt=prompt,
                 expect=tuple(tuple(group) for group in expect),
+                behavior_expect=tuple(tuple(group) for group in behavior_expect),
                 reject=tuple(reject),
+                read=tuple(read),
+                avoid_read=tuple(avoid_read),
             )
         )
     if not cases:
@@ -160,30 +187,70 @@ def parse_events(stdout: str) -> tuple[str, dict[str, int], list[dict[str, Any]]
     return "\n".join(messages).strip(), usage, events
 
 
-def evaluate_output(case: Case, text: str, raw_stdout: str) -> dict[str, Any]:
+def skill_reads_from_events(events: list[dict[str, Any]]) -> list[str]:
+    reads: set[str] = set()
+    for event in events:
+        if event.get("type") != "item.completed":
+            continue
+        item = event.get("item", {})
+        if item.get("type") != "command_execution":
+            continue
+        command = item.get("command", "")
+        output = item.get("aggregated_output", "")
+        for match in re.finditer(r'''(?:^|[\s'"=/])skills/([A-Za-z0-9_-]+)/SKILL\.md(?=$|[\s'"\\])''', command):
+            if f"name: {match.group(1)}" in output:
+                reads.add(match.group(1))
+    return sorted(reads)
+
+
+def evaluate_output(
+    case: Case,
+    text: str,
+    events: list[dict[str, Any]],
+    require_skill_read: bool,
+) -> dict[str, Any]:
     expect_results = []
     for group in case.expect:
         matched = next((pattern for pattern in group if re.search(pattern, text, re.IGNORECASE | re.MULTILINE)), None)
         expect_results.append({"patterns": list(group), "matched": matched})
+
+    behavior_results = []
+    for group in case.behavior_expect:
+        matched = next((pattern for pattern in group if re.search(pattern, text, re.IGNORECASE | re.MULTILINE)), None)
+        behavior_results.append({"patterns": list(group), "matched": matched})
 
     reject_results = []
     for pattern in case.reject:
         matched = bool(re.search(pattern, text, re.IGNORECASE | re.MULTILINE))
         reject_results.append({"pattern": pattern, "matched": matched})
 
-    skill_read = f"/{case.skill}/SKILL.md" in raw_stdout
-    passed = skill_read and all(item["matched"] for item in expect_results) and not any(
-        item["matched"] for item in reject_results
+    skill_reads = skill_reads_from_events(events)
+    skill_read = case.skill in skill_reads
+    required_reads = [{"skill": name, "matched": name in skill_reads} for name in case.read]
+    avoided_reads = [{"skill": name, "matched": name in skill_reads} for name in case.avoid_read]
+    reject_failed = any(item["matched"] for item in reject_results)
+    behavior_passed = all(item["matched"] for item in behavior_results) and not reject_failed
+    passed = (
+        (not require_skill_read or skill_read)
+        and all(item["matched"] for item in expect_results)
+        and not reject_failed
+        and all(item["matched"] for item in required_reads)
+        and not any(item["matched"] for item in avoided_reads)
     )
     return {
         "passed": passed,
+        "behavior_passed": behavior_passed,
         "skill_read": skill_read,
+        "skill_reads": skill_reads,
         "expect": expect_results,
+        "behavior_expect": behavior_results,
         "reject": reject_results,
+        "read": required_reads,
+        "avoid_read": avoided_reads,
     }
 
 
-def run_once(case: Case, timeout: int, reasoning: str | None) -> dict[str, Any]:
+def run_once(case: Case, timeout: int, reasoning: str | None, unassisted: bool) -> dict[str, Any]:
     real_codex_home = Path(os.environ.get("CODEX_HOME", Path.home() / ".codex")).expanduser()
     source_config = real_codex_home / "config.toml"
     if not source_config.is_file():
@@ -202,13 +269,20 @@ def run_once(case: Case, timeout: int, reasoning: str | None) -> dict[str, Any]:
     if auth.exists():
         (codex_home / "auth.json").symlink_to(auth)
 
-    skill_path = home / ".agents" / "skills" / "skills" / case.skill / "SKILL.md"
-    prompt = (
-        "这是隔离的行为评测。先读取并遵守这个精确的 Skill 文件，再回答下面的任务：\n"
-        f"{skill_path}\n\n"
-        "不要修改文件，不要执行有副作用的操作。只返回任务要求的判断、计划或澄清问题。\n\n"
-        f"$ {case.skill}\n{case.prompt}"
-    )
+    if unassisted:
+        prompt = (
+            "这是隔离的行为评测。不要修改文件，不要执行有副作用的操作。"
+            "只返回任务要求的判断、计划或澄清问题。\n\n"
+            f"{case.prompt}"
+        )
+    else:
+        skill_path = home / ".agents" / "skills" / "skills" / case.skill / "SKILL.md"
+        prompt = (
+            "这是隔离的行为评测。先读取并遵守这个精确的 Skill 文件，再回答下面的任务：\n"
+            f"{skill_path}\n\n"
+            "不要修改文件，不要执行有副作用的操作。只返回任务要求的判断、计划或澄清问题。\n\n"
+            f"$ {case.skill}\n{case.prompt}"
+        )
     command = [
         "codex",
         "exec",
@@ -240,7 +314,7 @@ def run_once(case: Case, timeout: int, reasoning: str | None) -> dict[str, Any]:
         )
         elapsed = time.monotonic() - started
         text, usage, events = parse_events(completed.stdout)
-        checks = evaluate_output(case, text, completed.stdout)
+        checks = evaluate_output(case, text, events, require_skill_read=not unassisted)
         return {
             "case": case.id,
             "skill": case.skill,
@@ -251,6 +325,7 @@ def run_once(case: Case, timeout: int, reasoning: str | None) -> dict[str, Any]:
             "stderr_tail": completed.stderr[-2000:],
             "usage": usage,
             "events_count": len(events),
+            "unassisted": unassisted,
             **checks,
         }
     except subprocess.TimeoutExpired as exc:
@@ -265,10 +340,16 @@ def run_once(case: Case, timeout: int, reasoning: str | None) -> dict[str, Any]:
             "stderr_tail": (exc.stderr or "")[-2000:] if isinstance(exc.stderr, str) else "",
             "usage": {},
             "events_count": 0,
+            "unassisted": unassisted,
             "passed": False,
+            "behavior_passed": False,
             "skill_read": False,
+            "skill_reads": [],
             "expect": [],
+            "behavior_expect": [],
             "reject": [],
+            "read": [],
+            "avoid_read": [],
         }
     finally:
         shutil.rmtree(root, ignore_errors=True)
@@ -295,6 +376,7 @@ def summarize(results: list[dict[str, Any]], repeat: int) -> dict[str, Any]:
 
     total = len(results)
     passed = sum(1 for result in results if result["passed"])
+    behavior_passed = sum(1 for result in results if result.get("behavior_passed", result["passed"]))
     usage = {
         key: sum(int(result.get("usage", {}).get(key, 0) or 0) for result in results)
         for key in ("input_tokens", "cached_input_tokens", "output_tokens", "reasoning_output_tokens")
@@ -304,6 +386,8 @@ def summarize(results: list[dict[str, Any]], repeat: int) -> dict[str, Any]:
         "total_runs": total,
         "passed_runs": passed,
         "pass_rate": round(passed / total, 3) if total else 0,
+        "behavior_passed_runs": behavior_passed,
+        "behavior_pass_rate": round(behavior_passed / total, 3) if total else 0,
         "flipped_cases": [case["case"] for case in cases if case["flipped"]],
         "usage": usage,
         "cases": cases,
@@ -322,6 +406,10 @@ def print_summary(summary: dict[str, Any]) -> None:
         f"\nTotal: {summary['passed_runs']}/{summary['total_runs']} "
         f"({summary['pass_rate']:.0%}), flips={summary['flipped_cases'] or 'none'}"
     )
+    print(
+        f"Behavior: {summary['behavior_passed_runs']}/{summary['total_runs']} "
+        f"({summary['behavior_pass_rate']:.0%})"
+    )
     print(f"Tokens: {json.dumps(summary['usage'], ensure_ascii=False)}")
 
 
@@ -332,6 +420,11 @@ def main() -> int:
     parser.add_argument("--repeat", type=int, default=3, help="runs per case (default: 3)")
     parser.add_argument("--timeout", type=int, default=180, help="timeout per run in seconds")
     parser.add_argument("--reasoning", choices=("none", "minimal", "low", "medium", "high"), help="override reasoning")
+    parser.add_argument(
+        "--unassisted",
+        action="store_true",
+        help="do not provide the target SKILL.md path; measure automatic Skill discovery for the same cases",
+    )
     parser.add_argument("--output", type=Path, help="write full JSON results to this path")
     parser.add_argument("--dry-run", action="store_true", help="validate cases without invoking Codex")
     args = parser.parse_args()
@@ -356,7 +449,7 @@ def main() -> int:
     for case in cases:
         for run_index in range(1, args.repeat + 1):
             print(f"[{case.id}] run {run_index}/{args.repeat}", flush=True)
-            result = run_once(case, args.timeout, args.reasoning)
+            result = run_once(case, args.timeout, args.reasoning, args.unassisted)
             result["run"] = run_index
             all_results.append(result)
             print(

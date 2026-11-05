@@ -1,0 +1,6 @@
+interface:
+  display_name: "开发阶段路由"
+  short_description: "识别开发需求当前阶段与下一步，只建议不自动执行"
+  default_prompt: "使用 $dev-router auto 判断这项需求当前所处阶段、下一步和确认门禁；不要执行其他阶段。"
+policy:
+  allow_implicit_invocation: false
